@@ -1,55 +1,5 @@
 {
-  function assignment (left, right) {
-    return {
-      type: 'assignment',
-      left,
-      right
-    }
-  }
-
-  function command (name, params = {}) {
-    return {
-      type: 'command',
-      name,
-      params
-    }
-  }
-
-  function addressingMode (mode, value) {
-    return {
-      mode,
-      value
-    }
-  }
-
-  function identifier (text) {
-    const value = text.length == 1 ? text[0] : text[0] + text[1].join('')
-    return { type: 'identifier', value }
-  }
-
-  function instruction (name, mode) {
-    return {
-      type: 'instruction',
-      name,
-      mode
-    }
-  }
-
-  function label (name, params = {}) {
-    return {
-      type: 'label',
-      name,
-      params
-    }
-  }
-
-  function number (base, digits) {
-    return {
-      type: 'number',
-      base,
-      value: parseInt(digits.join(''), base)
-    }
-  }
+  const ParseNode = require('./ParseNode')
 }
 
 start = _ statement:statement _ {
@@ -66,24 +16,28 @@ statement
 
 assignment
   = left:identifier _ '=' _ right:expression {
-    return assignment(left, right)
+    return ParseNode.assignment(left, right)
   }
 
 command
-   = '.PATCH' _ '(' _ address:expression _ ',' _ bankOffset:expression _ ')' {
-     return command('patch', { address, bankOffset })
-   }
-   / '.ENDPATCH' {
-     return command('endPatch')
-   }
+  = '.' name:command_name _ '(' _ head:expression tail:(_ ',' _ expression)* _ ')' {
+    return ParseNode.command(name, [head].concat(tail.map(ary => ary[3])))
+  }
+  / '.' name:command_name {
+    return ParseNode.command(name)
+  }
+
+command_name = name:[A-Z_]+ {
+  return name.join('')
+}
 
 instruction
   = label
   / name:instructionName _m mode:addressingMode {
-    return instruction(name, mode)
+    return ParseNode.instruction(name, mode)
   }
   / name:instructionName {
-    return instruction(name, addressingMode('implicit', ''))
+    return ParseNode.instruction(name, ParseNode.addressingMode('implicit', ''))
   }
 
 instructionName = name:identifier {
@@ -94,41 +48,41 @@ instructionName = name:identifier {
 }
 
 addressingMode
-  = 'A'{
-    return addressingMode('accumulator', 'A')
+  = [aA] {
+    return ParseNode.addressingMode('accumulator', 'A')
   }
   / value:expression _ ',' _ [xX] {
-    return addressingMode('xIndex', value)
+    return ParseNode.addressingMode('xIndex', value)
   }
   / value:expression _ ',' _ [yY] {
-    return addressingMode('yIndex', value)
+    return ParseNode.addressingMode('yIndex', value)
   }
   / value:expression {
-    return addressingMode('expression', value)
+    return ParseNode.addressingMode('expression', value)
   }
   / '*' sign:[+\-] amount:[0-9]+ {
     const value = (sign === '-' ? -1 : 1) * parseInt(amount.join(''))
-    return addressingMode('relative', value)
+    return ParseNode.addressingMode('relative', value)
   }
   / '@' label:identifier {
-    return addressingMode('relativeLabel', '@' + label.value)
+    return ParseNode.addressingMode('relativeLabel', '@' + label.value)
   }
   / '(' _ value:expression _ ')' {
-    return addressingMode('indirect', value)
+    return ParseNode.addressingMode('indirect', value)
   }
   / '(' _ value:expression _ ',' _ [xX] _ ')' {
-    return addressingMode('indexedIndirect', value)
+    return ParseNode.addressingMode('indexedIndirect', value)
   }
   / '(' _ value:expression _ ')' _ ',' _ [yY] {
-    return addressingMode('indirectIndexed', value)
+    return ParseNode.addressingMode('indirectIndexed', value)
   }
 
 label
   = '@' name:identifier ':' {
-    return label(name, { local: true })
+    return ParseNode.label(name, { local: true })
   }
   / name:identifier ':' {
-    return label(name)
+    return ParseNode.label(name)
   }
 
 expression
@@ -137,14 +91,20 @@ expression
   / number
 
 identifier = text:([a-zA-Z_][a-zA-Z0-9_]+) {
-  return identifier(text)
+  return ParseNode.identifier(text)
 }
 
 immediate = '#' number:number {
-  return { type: 'immediate', number }
+  return ParseNode.immediate(number)
 }
 
 number
-  = '%' digits:[01]+ { return number(2, digits) }
-  / digits:[0-9]+ { return number(10, digits) }
-  / '$' digits:[0-9a-fA-F]+ { return number(16, digits) }
+  = '%' digits:[01]+ {
+    return ParseNode.number(2, digits)
+  }
+  / digits:[0-9]+ {
+    return ParseNode.number(10, digits)
+  }
+  / '$' digits:[0-9a-fA-F]+ {
+    return ParseNode.number(16, digits)
+  }
