@@ -67,14 +67,14 @@ addressingMode
   / '@' label:identifier {
     return ParseNode.addressingMode('relativeLabel', '@' + label.value)
   }
+  / '(' _ value:expression _ ')' _ ',' _ [yY] {
+    return ParseNode.addressingMode('indirectIndexed', value)
+  }
   / '(' _ value:expression _ ')' {
     return ParseNode.addressingMode('indirect', value)
   }
   / '(' _ value:expression _ ',' _ [xX] _ ')' {
     return ParseNode.addressingMode('indexedIndirect', value)
-  }
-  / '(' _ value:expression _ ')' _ ',' _ [yY] {
-    return ParseNode.addressingMode('indirectIndexed', value)
   }
 
 label
