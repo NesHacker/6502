@@ -32,8 +32,14 @@ command_name = name:[A-Z_]+ {
 }
 
 instruction
-  = label
-  / name:instructionName _m mode:addressingMode {
+  = label:label _ instruction:assembly_instruction {
+    return [label, instruction]
+  }
+  / label
+  / assembly_instruction
+
+assembly_instruction
+  = name:instructionName _m mode:addressingMode {
     return ParseNode.instruction(name, mode)
   }
   / name:instructionName {

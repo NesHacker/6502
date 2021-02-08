@@ -1,3 +1,6 @@
+calculateTotal = $BF90
+cmpTotalToGold = $BEB0
+
 ;
 ; calculateBuyMaximum
 ; Address:  06:BDA0 (01BDB0)
@@ -12,11 +15,7 @@
 ; for fun. The original code I wrote is in `calculateBuyMaximum.js` and
 ; sprinkled throughout the implementation below in the form of comments.
 ;
-.PATCH($01BDB0, $BDA0)
-  ; External references
-  calculateTotal = $BF90
-  cmpTotalToGold = $BEB0
-
+.ADDRESS($BDA0)
 calculateBuyMaximum:
   ; // Determine based on inventory count
   ; let max = 99 - inventoryCount
@@ -95,4 +94,3 @@ calculateBuyMaximum:
   lda #1                  ; A9 01
   sta $0D                 ; 85 0D
   rts                     ; 60
-.ENDPATCH

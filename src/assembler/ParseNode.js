@@ -36,7 +36,7 @@ module.exports = class ParseNode {
   }
 
   static label (name, params = {}) {
-    return { type: 'label', name, params }
+    return { type: 'label', name: name.value, local: !!params.local }
   }
 
   static number (base, digits) {

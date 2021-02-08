@@ -279,3 +279,48 @@ test('instruction: indirect indexed ($AA),Y', () => {
     }
   })
 })
+
+test('labels', () => {
+  const result = parse('MyLabel123:')
+  expect(result).toEqual({
+    type: 'label',
+    name: 'MyLabel123',
+    local: false
+  })
+})
+
+test('local labels', () => {
+  const result = parse('@loop:')
+  expect(result).toEqual({
+    type: 'label',
+    name: 'loop',
+    local: true
+  })
+})
+
+test('labeled instructions', () => {
+  const result = parse('@begin: lda #22')
+  expect(result).toEqual([
+    {
+      type: 'label',
+      name: 'begin',
+      local: true
+    },
+    {
+      type: 'instruction',
+      name: 'lda',
+      mode: {
+        type: 'addressingMode',
+        mode: 'expression',
+        value: {
+          type: 'immediate',
+          number: {
+            type: 'number',
+            base: 10,
+            value: 22
+          }
+        }
+      }
+    }
+  ])
+})
