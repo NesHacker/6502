@@ -1,0 +1,108 @@
+{
+  const ParseNode = require('./ParseNode')
+}
+
+start = _ statement:statement _ {
+  return statement
+}
+
+_ = [ \t\r\n]*
+_m = [ \t\r\n]+
+
+statement
+  = assignment
+  / command
+  / label:label _ instruction:instruction { return [label, instruction] }
+  / label
+  / instruction
+
+assignment
+  = id:identifier _ '=' _ value:expression {
+    return ParseNode.assignment(id, value)
+  }
+
+command
+  = '.' name:identifier _ params:expression_list {
+    return ParseNode.command(name.data.value, params)
+  }
+  / '.' name:identifier {
+    return ParseNode.command(name.data.value)
+  }
+
+expression_list = head:expression tail:(_ ',' _ expression)* {
+  return ParseNode.expressionList([head].concat(tail.map(ary => ary[3])))
+}
+
+label
+  = '@' name:identifier ':' {
+    return ParseNode.localLabel(name)
+  }
+  / name:identifier ':' {
+    return ParseNode.label(name)
+  }
+
+instruction
+  = name:instructionName _m [Aa] {
+    return ParseNode.instruction(name, 'accumulator')
+  }
+  / name:instructionName _m value:expression _ ',' _ [xX] {
+    return ParseNode.instruction(name, 'xIndex', value)
+  }
+  / name:instructionName _m value:expression _ ',' _ [yY] {
+    return ParseNode.instruction(name, 'yIndex', value)
+  }
+  / name:instructionName _m '@' id:identifier {
+    return ParseNode.instruction(name, 'localLabel', id)
+  }
+  / name:instructionName _m '*' sign:[+\-] amount:[0-9]+ {
+    const value = ParseNode.number(10, [sign].concat(amount).join(''))
+    return ParseNode.instruction(name, 'relative', value)
+  }
+  / name:instructionName _m value:expression {
+    return ParseNode.instruction(name, 'expression', value)
+  }
+  / name:instructionName _m '(' _ value:expression _ ',' _ [xX] _ ')' {
+    return ParseNode.instruction(name, 'indirectX', value)
+  }
+  / name:instructionName _m '(' _ value:expression _ ')' _ ',' _ [yY] {
+    return ParseNode.instruction(name, 'indirectY', value)
+  }
+  / name:instructionName _m '(' _ value:expression _ ')' {
+    return ParseNode.instruction(name, 'indirect', value)
+  }
+  / name:instructionName {
+    return ParseNode.instruction(name, 'implicit')
+  }
+
+instructionName = text:([a-zA-Z][a-zA-Z][a-zA-Z]) {
+  return text.join('').toLowerCase()
+}
+
+expression
+  = identifier
+  / immediate
+  / number
+
+identifier = text:([a-zA-Z_][a-zA-Z0-9_]*) {
+  const characters = text.length > 1 ? [text[0]].concat(text[1]) : text
+  const value = characters.join('')
+  return ParseNode.identifier(value)
+}
+
+immediate = '#' number:number {
+  return ParseNode.immediate(number)
+}
+
+number
+  = '%' sign:[+\-]? digits:[01]+ {
+    const valueText = [sign ? sign : '+'].concat(digits).join('')
+    return ParseNode.number(2, valueText)
+  }
+  / sign:[+\-]? digits:[0-9]+ {
+    const valueText = [sign ? sign : '+'].concat(digits).join('')
+    return ParseNode.number(10, valueText)
+  }
+  / '$' sign:[+\-]? digits:[0-9a-fA-F]+ {
+    const valueText = [sign ? sign : '+'].concat(digits).join('')
+    return ParseNode.number(16, valueText)
+  }
