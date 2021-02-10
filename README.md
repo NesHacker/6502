@@ -2,7 +2,7 @@
 JavaScript utilities for 6502 programming.
 
 ## Installation
-`npm install @neshacker/6502`
+`npm install @neshacker/6502-tools`
 
 ## Assembler
 The package includes a basic 6502 assembler with support for basic constant
@@ -21,7 +21,7 @@ Parses and assembles the given source into a linear intermediate representation
 then outputs the results of the parse to the console.
 
 ```js
-const { Assembler } = require('@neshacker/6502')
+const { Assembler } = require('@neshacker/6502-tools')
 const source = `
   my_routine = $ACDC
   .org $BD17
@@ -49,7 +49,7 @@ Converts the given assembly source into a string of hexadecimal digits for use
 with a hex editor.
 
 ```js
-const { Assembler } = require('@neshacker/6502')
+const { Assembler } = require('@neshacker/6502-tools')
 const source = `
   my_routine = $ACDC
   .org $BD17
