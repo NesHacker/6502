@@ -57,17 +57,21 @@ class Label {
   }
 }
 
-class AssemblyHandler {
+/**
+ * A collection of recursive handlers for converting parse nodes into linear
+ * intermediate forms.
+ */
+class ParseNodeHandler {
   static statementList (node, scope) {
     return node.children
-      .map(child => assembleNode(child, scope))
+      .map(child => assembleParseNode(child, scope))
       .filter(r => !!r)
   }
 
   static assignment (node, scope) {
     const [idNode, valueNode] = node.children
     const id = idNode.data.value
-    const value = assembleNode(valueNode, scope)
+    const value = assembleParseNode(valueNode, scope)
     if (value.isIdentifier()) {
       throw new AssemblyError(
         `'${value.data.value}' is not defined.`,
@@ -78,7 +82,7 @@ class AssemblyHandler {
   }
 
   static command (node, scope) {
-    const params = node.children.map(child => assembleNode(child, scope))
+    const params = node.children.map(child => assembleParseNode(child, scope))
     return new Command(node.data.name, params)
   }
 
@@ -101,7 +105,7 @@ class AssemblyHandler {
         addressingMode = AddressingMode.Accumulator
         break
       case 'expression':
-        value = assembleNode(node.children[0], scope)
+        value = assembleParseNode(node.children[0], scope)
         if (value.isNumber()) {
           if (value.data.value <= 255) {
             addressingMode = AddressingMode.ZeroPage
@@ -120,15 +124,15 @@ class AssemblyHandler {
         break
       case 'indirect':
         addressingMode = AddressingMode.Indirect
-        value = assembleNode(node.children[0], scope)
+        value = assembleParseNode(node.children[0], scope)
         break
       case 'indirectX':
         addressingMode = AddressingMode.IndirectX
-        value = assembleNode(node.children[0], scope)
+        value = assembleParseNode(node.children[0], scope)
         break
       case 'indirectY':
         addressingMode = AddressingMode.IndirectY
-        value = assembleNode(node.children[0], scope)
+        value = assembleParseNode(node.children[0], scope)
         break
       case 'localLabel':
         if (name === 'jmp') {
@@ -141,10 +145,10 @@ class AssemblyHandler {
         break
       case 'relative':
         addressingMode = AddressingMode.Relative
-        value = assembleNode(node.children[0], scope)
+        value = assembleParseNode(node.children[0], scope)
         break
       case 'xIndex':
-        value = assembleNode(node.children[0], scope)
+        value = assembleParseNode(node.children[0], scope)
         if (value.isNumber()) {
           if (value.data.value <= 255) {
             addressingMode = AddressingMode.ZeroPageX
@@ -162,7 +166,7 @@ class AssemblyHandler {
         }
         break
       case 'yIndex':
-        value = assembleNode(node.children[0], scope)
+        value = assembleParseNode(node.children[0], scope)
         if (value.isNumber()) {
           if (value.data.value <= 255) {
             addressingMode = AddressingMode.ZeroPageY
@@ -214,11 +218,17 @@ class AssemblyHandler {
   }
 }
 
-function assembleNode (node, scope) {
+/**
+ * Attempts to translate a 6502 assembly parse node into a linear intermediate
+ * form.
+ * @param {ParseNode} node The parse node to translate.
+ * @param {Scope} scope The current scope for use with translation.
+ */
+function assembleParseNode (node, scope) {
   if (!scope) {
     scope = new Scope()
   }
-  const handler = AssemblyHandler[node.type]
+  const handler = ParseNodeHandler[node.type]
   if (!handler) {
     throw new Error(`Encountered unknown ParseNode type '${node.type}'.`)
   }
@@ -348,7 +358,7 @@ module.exports.toHexString = toHexString
 function assemble (rootNode) {
   // Recursively construct the linear representation of the given root node
   const scope = new Scope()
-  const linearForm = assembleNode(rootNode, scope)
+  const linearForm = assembleParseNode(rootNode, scope)
 
   // Execute commands and assign addresses to labels and instructions
   assignAddresses(linearForm)

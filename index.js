@@ -61,4 +61,6 @@ class Assembler {
   }
 }
 
-module.exports = Assembler
+module.exports = {
+  Assembler
+}
