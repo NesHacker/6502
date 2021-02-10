@@ -10,7 +10,7 @@ assignment, the `.org` command, and all core 6502 instructions and addressing
 modes.
 
 The assembler is very early in development and is not fully featured but it does
-work weel for some basic tasks, such as converting assembly to hex-strings for
+work well for some basic tasks, such as converting assembly to hex-strings for
 use with a hex editor, etc. For larger tasks or projects we suggest you use
 [ca65](https://cc65.github.io/doc/ca65.html).
 
