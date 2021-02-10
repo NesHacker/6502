@@ -51,8 +51,8 @@ instruction
   / name:instructionName _m value:expression _ ',' _ [yY] {
     return ParseNode.instruction(name, 'yIndex', value)
   }
-  / name:instructionName _m '@' label:identifier {
-    return ParseNode.instruction(name, 'localLabel', value)
+  / name:instructionName _m '@' id:identifier {
+    return ParseNode.instruction(name, 'localLabel', id)
   }
   / name:instructionName _m '*' sign:[+\-] amount:[0-9]+ {
     const value = ParseNode.number(10, [sign].concat(amount).join(''))

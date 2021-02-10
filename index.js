@@ -1,15 +1,64 @@
 const fs = require('fs')
+const { localLabel } = require('./src/assembler/ParseNode')
+const { assemble, toHexString } = require('./src/assembler')
 const { parse } = require('./src/assembler/parser')
 
+/**
+ * Basic 6502 Assembler.
+ * @author Ryan Sandor Richards
+ */
+class Assembler {
+  /**
+   * Converts the assembly source file at the given path to a string of
+   * hexadecimal digits for use with hex editors.
+   * @param {string} path Path to the assembly source file.
+   */
+  static fileToHexString (path) {
+    const source = fs.readFileSync(path, 'utf8')
+    return this.toHexString(source)
+  }
 
-const source = fs.readFileSync('example.s', 'utf8')
-console.log(parse(source))
+  /**
+   * Converts the given 6502 assembly source into a string of hexadecimal digits
+   * for use with hex editors.
+   * @param {string} source Assembly source to convert to a byte string.
+   * @return {string} A string representation of the assembled bytes for the
+   *   given source.
+   */
+  static toHexString (source) {
+    return assemble(parse(source))
+      .filter(lir => Array.isArray(lir.bytes))
+      .map(lir => lir.toByteString())
+      .join('')
+  }
 
-// lines.forEach((line, index) => {
-//   try {
-//     const result = parse(line)
-//     if (result) console.log(line, result)
-//   } catch (err) {
-//     console.log(index, line, err)
-//   }
-// })
+  /**
+   * Parses and assembles the given 6502 assembly source and outputs the result
+   * to the console.
+   * @param {string} source Assembly source to inspect.
+   */
+  static inspect (source) {
+    const root = parse(source)
+    assemble(root).forEach(lir => {
+      const address = toHexString(lir.address)
+      if (!lir.bytes) {
+        console.log(address, (lir.local ? '@' : '') + lir.name + ':')
+      } else {
+        let byteString = lir.toByteString()
+        console.log(address, byteString, '\t', lir.source)
+      }
+    })
+  }
+
+  /**
+   * Parses and assembles the 6502 assembly source file at the given path and
+   * outputs the result to the console.
+   * @param {string} path Path to the assembly source file.
+   */
+  static inspectFile (path) {
+    const source = fs.readFileSync(path, 'utf8')
+    this.inspect(source)
+  }
+}
+
+module.exports = Assembler

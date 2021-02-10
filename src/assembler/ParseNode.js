@@ -96,6 +96,14 @@ module.exports = class ParseNode {
   }
 
   /**
+   * Creates a parse node representing a list of statements.
+   * @param {Array<ParseNode>} children Nodes for the statement list.
+   */
+  static statementList (children) {
+    return new ParseNode('statementList', children)
+  }
+
+  /**
    * Creates a new parse node.
    * @param {string} type The node's type.
    * @param {Array<ParseNode>} [children] Array of children for the node.
@@ -105,6 +113,7 @@ module.exports = class ParseNode {
     this._type = type
     this._children = children
     this._data = data
+    this._line = null
   }
 
   /**
@@ -119,6 +128,21 @@ module.exports = class ParseNode {
    */
   get data () {
     return this._data
+  }
+
+  /**
+   * @return {ParseLine} Information about the line that generated this node.
+   */
+  get line () {
+    return this._line
+  }
+
+  /**
+   * Set the line information for the parse node.
+   * @param {ParseLine} val The line information to set.
+   */
+  set line (val) {
+    this._line = val
   }
 
   /**

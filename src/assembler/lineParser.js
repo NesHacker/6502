@@ -190,8 +190,8 @@ function peg$parse(input, options) {
       peg$c28 = function(name, value) {
           return ParseNode.instruction(name, 'yIndex', value)
         },
-      peg$c29 = function(name, label) {
-          return ParseNode.instruction(name, 'localLabel', value)
+      peg$c29 = function(name, id) {
+          return ParseNode.instruction(name, 'localLabel', id)
         },
       peg$c30 = "*",
       peg$c31 = peg$literalExpectation("*", false),

@@ -212,3 +212,14 @@ test('instruction: relative', () => {
   expect(number.isNumber()).toBe(true)
   expect(number.data.value).toBe(-2)
 })
+
+test('instruction: local label', () => {
+  const node = parse('jmp @break')
+  expect(node.isInstruction()).toBe(true)
+  expect(node.data.name).toEqual('jmp')
+  expect(node.data.mode).toEqual('localLabel')
+  expect(node.children.length).toBe(1)
+  const [id] = node.children
+  expect(id.isIdentifier()).toBe(true)
+  expect(id.data.value).toEqual('break')
+})

@@ -15,7 +15,7 @@ cmpTotalToGold = $BEB0
 ; for fun. The original code I wrote is in `calculateBuyMaximum.js` and
 ; sprinkled throughout the implementation below in the form of comments.
 ;
-.ADDRESS($BDA0)
+.org $BDA0
 calculateBuyMaximum:
   ; // Determine based on inventory count
   ; let max = 99 - inventoryCount
@@ -33,10 +33,10 @@ calculateBuyMaximum:
   ;   return max
   ; }
   jsr cmpTotalToGold      ; 20 B0 BE
-  beq *+2                  ; F0 02
-  bcs *+9                  ; B0 09
+  beq *+4                  ; F0 02
+  bcs *+11                 ; B0 09
   lda $04                 ; A5 04
-  bne *+2                  ; D0 02
+  bne *+4                 ; D0 02
   lda #1                  ; A9 01
   sta $0D                 ; 85 0D
   rts                     ; 60
@@ -70,7 +70,7 @@ calculateBuyMaximum:
   ;   if (total < gold)
   ;     left = max + 1
   jsr cmpTotalToGold      ; 20 B0 BE
-  bcs *+8                 ; B0 08
+  bcs *+10                ; B0 08
   ldx $04                 ; A6 04
   inx                     ; E8
   stx $02                 ; 86 02
@@ -78,7 +78,7 @@ calculateBuyMaximum:
 
   ;   else if (total > gold)
   ;     right = max
-  beq *+7                 ; F0 07
+  beq *+9                 ; F0 07
   lda $04                 ; A5 04
   sta $03                 ; 85 03
   jmp @loop               ; 4C C7 BD
@@ -90,7 +90,7 @@ calculateBuyMaximum:
   ; // Return the maximum
   ; return max > 0 ? max : 1
   lda $04                 ; A5 04
-  bne *+2                  ; D0 02
+  bne *+4                  ; D0 02
   lda #1                  ; A9 01
   sta $0D                 ; 85 0D
   rts                     ; 60
