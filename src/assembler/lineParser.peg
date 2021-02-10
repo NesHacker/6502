@@ -12,92 +12,81 @@ _m = [ \t\r\n]+
 statement
   = assignment
   / command
+  / label:label _ instruction:instruction { return [label, instruction] }
+  / label
   / instruction
 
 assignment
-  = left:identifier _ '=' _ right:expression {
-    return ParseNode.assignment(left, right)
+  = id:identifier _ '=' _ value:expression {
+    return ParseNode.assignment(id, value)
   }
 
 command
-  = '.' name:command_name _ '(' _ head:expression tail:(_ ',' _ expression)* _ ')' {
-    return ParseNode.command(name, [head].concat(tail.map(ary => ary[3])))
+  = '.' name:identifier _ params:expression_list {
+    return ParseNode.command(name.data.value, params)
   }
-  / '.' name:command_name {
-    return ParseNode.command(name)
+  / '.' name:identifier {
+    return ParseNode.command(name.data.value)
   }
 
-command_name = name:[A-Z_]+ {
-  return name.join('')
+expression_list = head:expression tail:(_ ',' _ expression)* {
+  return ParseNode.expressionList([head].concat(tail.map(ary => ary[3])))
 }
-
-instruction
-  = label:label _ instruction:assembly_instruction {
-    return [label, instruction]
-  }
-  / label
-  / assembly_instruction
-
-assembly_instruction
-  = name:instructionName _m mode:addressingMode {
-    return ParseNode.instruction(name, mode)
-  }
-  / name:instructionName {
-    return ParseNode.instruction(name, ParseNode.addressingMode('implicit', ''))
-  }
-
-instructionName = name:identifier {
-  if (name.value.length !== 3) {
-    throw new Error('Invalid instruction name:', name)
-  }
-  return name.value.toLowerCase()
-}
-
-addressingMode
-  = [aA] {
-    return ParseNode.addressingMode('accumulator', 'A')
-  }
-  / value:expression _ ',' _ [xX] {
-    return ParseNode.addressingMode('xIndex', value)
-  }
-  / value:expression _ ',' _ [yY] {
-    return ParseNode.addressingMode('yIndex', value)
-  }
-  / value:expression {
-    return ParseNode.addressingMode('expression', value)
-  }
-  / '*' sign:[+\-] amount:[0-9]+ {
-    const value = (sign === '-' ? -1 : 1) * parseInt(amount.join(''))
-    return ParseNode.addressingMode('relative', value)
-  }
-  / '@' label:identifier {
-    return ParseNode.addressingMode('relativeLabel', '@' + label.value)
-  }
-  / '(' _ value:expression _ ')' _ ',' _ [yY] {
-    return ParseNode.addressingMode('indirectIndexed', value)
-  }
-  / '(' _ value:expression _ ')' {
-    return ParseNode.addressingMode('indirect', value)
-  }
-  / '(' _ value:expression _ ',' _ [xX] _ ')' {
-    return ParseNode.addressingMode('indexedIndirect', value)
-  }
 
 label
   = '@' name:identifier ':' {
-    return ParseNode.label(name, { local: true })
+    return ParseNode.localLabel(name)
   }
   / name:identifier ':' {
     return ParseNode.label(name)
   }
+
+instruction
+  = name:instructionName _m [Aa] {
+    return ParseNode.instruction(name, 'accumulator')
+  }
+  / name:instructionName _m value:expression _ ',' _ [xX] {
+    return ParseNode.instruction(name, 'xIndex', value)
+  }
+  / name:instructionName _m value:expression _ ',' _ [yY] {
+    return ParseNode.instruction(name, 'yIndex', value)
+  }
+  / name:instructionName _m '@' label:identifier {
+    return ParseNode.instruction(name, 'localLabel', value)
+  }
+  / name:instructionName _m '*' sign:[+\-] amount:[0-9]+ {
+    const value = ParseNode.number(10, [sign].concat(amount).join(''))
+    return ParseNode.instruction(name, 'relative', value)
+  }
+  / name:instructionName _m value:expression {
+    return ParseNode.instruction(name, 'expression', value)
+  }
+  / name:instructionName _m '(' _ value:expression _ ',' _ [xX] _ ')' {
+    return ParseNode.instruction(name, 'indirectX', value)
+  }
+  / name:instructionName _m '(' _ value:expression _ ')' _ ',' _ [yY] {
+    return ParseNode.instruction(name, 'indirectY', value)
+  }
+  / name:instructionName _m '(' _ value:expression _ ')' {
+    return ParseNode.instruction(name, 'indirect', value)
+  }
+  / name:instructionName {
+    return ParseNode.instruction(name, 'implicit')
+  }
+
+instructionName = text:([a-zA-Z][a-zA-Z][a-zA-Z]) {
+  return text.join('').toLowerCase()
+}
 
 expression
   = identifier
   / immediate
   / number
 
-identifier = text:([a-zA-Z_][a-zA-Z0-9_]+) {
-  return ParseNode.identifier(text)
+identifier = text:([a-zA-Z_][a-zA-Z0-9_]*) {
+  const characters = text.length > 1 ? [text[0]].concat(text[1]) : text
+  const value = characters.join('')
+  return ParseNode.identifier(value)
 }
 
 immediate = '#' number:number {
@@ -105,12 +94,15 @@ immediate = '#' number:number {
 }
 
 number
-  = '%' digits:[01]+ {
-    return ParseNode.number(2, digits)
+  = '%' sign:[+\-]? digits:[01]+ {
+    const valueText = [sign ? sign : '+'].concat(digits).join('')
+    return ParseNode.number(2, valueText)
   }
-  / digits:[0-9]+ {
-    return ParseNode.number(10, digits)
+  / sign:[+\-]? digits:[0-9]+ {
+    const valueText = [sign ? sign : '+'].concat(digits).join('')
+    return ParseNode.number(10, valueText)
   }
-  / '$' digits:[0-9a-fA-F]+ {
-    return ParseNode.number(16, digits)
+  / '$' sign:[+\-]? digits:[0-9a-fA-F]+ {
+    const valueText = [sign ? sign : '+'].concat(digits).join('')
+    return ParseNode.number(16, valueText)
   }
