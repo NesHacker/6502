@@ -1,6 +1,8 @@
 const { test, expect } = require('@jest/globals')
-const { assemble, Label, Instruction } = require('./index')
-const { parse } = require('./parser')
+const { assemble } = require('./assemble')
+const { Instruction } = require('./Instruction')
+const { Label } = require('./Label')
+const { parse } = require('../parser')
 
 test('assemble(): basic assembly and LIR output', () => {
   const parseNode = parse(`

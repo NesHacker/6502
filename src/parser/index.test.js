@@ -1,6 +1,6 @@
 const { test, expect } = require('@jest/globals')
 const ParseNode = require('./ParseNode')
-const { parse, ParseError } = require('./parser')
+const { parse, ParseError } = require('./')
 
 
 test('parses valid 6502 assembly', () => {

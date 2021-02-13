@@ -7,13 +7,13 @@
  * console.log(instructions.adc.immediate)
  * @type {object}
  */
-const instructions = Object.freeze(require('./instructions.json'))
+const instructionMap = Object.freeze(require('./instructions.json'))
 
 /**
  * An array containing all 6502 instruction names.
  * @type {Array}
  */
-const instructionNames = Object.freeze(Object.keys(instructions))
+const instructionNames = Object.freeze(Object.keys(instructionMap))
 
 /**
  * A set containing all 6502 instruction names.
@@ -93,7 +93,7 @@ class InstructionInfo {
     if (!isValidIstruction(name)) {
       throw new InvalidInstructionError(name)
     }
-    const modes = instructions[name]
+    const modes = instructionMap[name]
     if (!modes[addressingMode]) {
       throw new InvalidAddressingModeError(name, addressingMode)
     }
