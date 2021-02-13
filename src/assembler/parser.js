@@ -7,22 +7,16 @@ const ParseNode = require('./ParseNode')
 class ParseError extends Error {
   /**
    * Creates a new parse error.
-   * @param {array} errors An array of errors that occurred during parsing.
+   * @param {Error} err The PEG parsing error.
+   * @param {object} line Information about the offending line.
+   * @param {number} line.lineNumber The line number in the source where the
+   *   error occurred.
+   * @param {string} line.assembly The assembly source that caused the error.
    */
-  constructor (errors) {
-    super('Failed to parse.')
-    this._errors = Object.freeze(errors)
-  }
-
-  /**
-   * An array of objects containing an error and the line on which it occurred.
-   * @type {array}
-   */
-  get errors () {
-    return this._errors
+  constructor (err, { lineNumber, assembly }) {
+    super(`Parse Error, line ${lineNumber} near "${assembly}": ${err}`)
   }
 }
-
 module.exports.ParseError = ParseError
 
 /**
@@ -61,7 +55,6 @@ class ParseLine {
     return this._data.assembly
   }
 }
-
 module.exports.ParseLine = ParseLine
 
 /**
@@ -108,12 +101,8 @@ function parse (source) {
         parsed.push(node)
       }
     } catch (err) {
-      parseErrors.push({ line, err })
+      throw new ParseError(err, line)
     }
-  }
-
-  if (parseErrors.length > 0) {
-    throw new ParseError(parseErrors)
   }
 
   return ParseNode.statementList(parsed)

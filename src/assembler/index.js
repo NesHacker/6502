@@ -2,12 +2,30 @@ const { AddressingMode, InstructionInfo } = require('./instructions')
 const { parse } = require('./parser')
 const ParseNode = require('./ParseNode')
 
+/**
+ * Thrown when an error occurs during assembly.
+ */
 class AssemblyError extends Error {
+  /**
+   * Creates a new AssemblyError.
+   * @param {string} msg The error message.
+   * @param {object} lineOptions Options describing the line for the error.
+   * @param {number} lineOptions.lineNumber The number of the line on which the
+   *   error occurred.
+   * @param {string} assembly The assembly code that caused the error.
+   */
   constructor (msg, { lineNumber, assembly }) {
-    super(`Line ${lineNumber}, near '${assembly}', ${msg}`)
+    super(`Assembly Error, line ${lineNumber} near "${assembly}": ${msg}`)
   }
 }
+module.exports.AssemblyError = AssemblyError
 
+/**
+ * Basic structure for holding variable scope during assembly. Currently the
+ * assembler only supports a single global scope. In the future this structure
+ * can be made recursive if we wish to add user controlled scoping (e.g .SCOPE
+ * command, etc.).
+ */
 class Scope {
   constructor () {
     this.constants = new Map()
@@ -185,14 +203,18 @@ class ParseNodeHandler {
         break
     }
 
-    return new Instruction({
-      addressingMode,
-      info: InstructionInfo.get(name, addressingMode),
-      localLabel,
-      name,
-      source: node.line.assembly,
-      value,
-    })
+    try {
+      return new Instruction({
+        addressingMode,
+        info: InstructionInfo.get(name, addressingMode),
+        localLabel,
+        name,
+        source: node.line.assembly,
+        value,
+      })
+    } catch (err) {
+      throw new AssemblyError(err.message, node.line)
+    }
   }
 
   static identifier (node, scope) {
