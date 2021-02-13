@@ -101,6 +101,7 @@ function parse (source) {
         node.forEach(n => {
           n.line = line
           setNodeLine(line, n)
+          parsed.push(n)
         })
       } else {
         setNodeLine(line, node)
