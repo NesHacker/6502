@@ -1,6 +1,6 @@
 {
   "name": "@neshacker/6502-tools",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "JavaScript utilities for 6502 software development.",
   "main": "index.js",
   "scripts": {
