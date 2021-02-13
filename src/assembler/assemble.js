@@ -279,7 +279,7 @@ function resolveLabels ({ local, global }, instruction) {
   const id = value.data.value
   const labelAddress = localLabel ? local.get(id) : global.get(id)
 
-  if (!labelAddress) {
+  if (typeof labelAddress !== 'number') {
     return
   }
 

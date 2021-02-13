@@ -60,11 +60,11 @@ class Instruction {
    * @return {string} The hexadecimal string representation of the node's bytes.
    */
   get hex () {
-    const byteToHex = b => {
-      const s = b.toString(16)
-      return s.length < 2 ? '0' + s : s
-    }
-    return this.bytes.map(byteToHex).join('').toUpperCase()
+    return Array.from(this.bytes)
+      .map(b => b.toString(16))
+      .map(s => s.length < 2 ? `0${s}` : s)
+      .join('')
+      .toUpperCase()
   }
 
   /**
