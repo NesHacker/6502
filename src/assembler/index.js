@@ -2,60 +2,249 @@ const { AddressingMode, InstructionInfo } = require('./instructions')
 const { parse } = require('./parser')
 const ParseNode = require('./ParseNode')
 
+/**
+ * Thrown when an error occurs during assembly.
+ */
 class AssemblyError extends Error {
+  /**
+   * Creates a new AssemblyError.
+   * @param {string} msg The error message.
+   * @param {object} lineOptions Options describing the line for the error.
+   * @param {number} lineOptions.lineNumber The number of the line on which the
+   *   error occurred.
+   * @param {string} assembly The assembly code that caused the error.
+   */
   constructor (msg, { lineNumber, assembly }) {
-    super(`Line ${lineNumber}, near '${assembly}', ${msg}`)
+    super(`Assembly Error, line ${lineNumber} near "${assembly}": ${msg}`)
   }
 }
+module.exports.AssemblyError = AssemblyError
 
+/**
+ * Basic structure for holding variable scope during assembly. Currently the
+ * assembler only supports a single global scope. In the future this structure
+ * can be made recursive if we wish to add user controlled scoping (e.g .SCOPE
+ * command, etc.).
+ */
 class Scope {
   constructor () {
     this.constants = new Map()
   }
 }
 
+/**
+ * Linear intermediate representation of a command.
+ */
 class Command {
-  constructor (name, params) {
-    this.name = name
-    this.params = params
+  /**
+   * Creates a new command representation.
+   * @param {object} opts Options for the command.
+   * @param {object} opts.line Source line information for the command.
+   * @param {string} opts.name The name of the command.
+   * @param {Array<ParseNode>} opts.params The parameters to the command.
+   */
+  constructor ({ line, name, params }) {
+    this._line = line
+    this._name = name
+    this._params = params
+  }
+
+  /**
+   * @return {object} Line information for the command.
+   */
+  get line () {
+    return this._line
+  }
+
+  /**
+   * @return {string} The name of the command.
+   */
+  get name () {
+    return this._name
+  }
+
+  /**
+   * @return {Array<ParseNode>} The paramters for the command.
+   */
+  get params () {
+    return this._params
   }
 }
 
+/**
+ * Linear intermediate representation of an instruction.
+ */
 class Instruction {
   constructor ({
-    addressingMode,
     info,
     localLabel,
-    name,
     value,
-    source,
+    line
   }) {
+    this._info = info
+    this._line = line
+
     this.address = -1
-    this.addressingMode = addressingMode
     this.bytes = []
-    this.length = info.length
-    this.localLabel = localLabel
-    this.name = name
-    this.opcode = info.opcode
-    this.source = source
     this.value = value
+
+    this.localLabel = localLabel
+
   }
 
-  toByteString () {
-    return this.bytes.map(b => {
+  /**
+   * @return {number} The address for the instruction.
+   */
+  get address () {
+    return this._address
+  }
+
+  /**
+   * Sets the program address for the instruction.
+   * @param {number} addr The address to set.
+   */
+  set address (addr) {
+    this._address = addr
+  }
+
+  /**
+   * @return {string} The addressing mode for the instruction.
+   */
+  get addressingMode () {
+    return this.info.addressingMode
+  }
+
+  /**
+   * @return {Uint8Array} The bytes for the instruction.
+   */
+  get bytes () {
+    return this._bytes
+  }
+
+  /**
+   * Sets the bytes for the instruction.
+   * @param {Uint8Array} bytes The bytes to set.
+   */
+  set bytes (bytes) {
+    this._bytes = bytes
+  }
+
+  /**
+   * @return {string} The hexadecimal string representation of the node's bytes.
+   */
+  get hex () {
+    const byteToHex = b => {
       const s = b.toString(16)
       return s.length < 2 ? '0' + s : s
-    }).join('').toUpperCase()
+    }
+    return this.bytes.map(byteToHex).join('').toUpperCase()
   }
-}
 
-class Label {
-  constructor (name, local = false) {
-    this.name = name
-    this.local = local
-    this.address = -1
+  /**
+   * @return {InstructionInfo} The general 6502 information for the instruction.
+   */
+  get info () {
+    return this._info
+  }
+
+  /**
+   * @return {number} The length of the instruction, in bytes.
+   */
+  get length () {
+    return this.info.length
+  }
+
+  /**
+   * @return {ParseLine} The line from which the instruction originated.
+   */
+  get line () {
+    return this._line
+  }
+
+  /**
+   * @return {string} The name of the instruction.
+   */
+  get name () {
+    return this.info.name
+  }
+
+  /**
+   * @return {number} The opcode for the instruction.
+   */
+  get opcode () {
+    return this.info.opcode
+  }
+
+  /**
+   * @return {string} The original assembly source for the instruction.
+   */
+  get source () {
+    return this.line.assembly
+  }
+
+  /**
+   * @return {ParseNode} The value for the node.
+   */
+  get value () {
+    return this._value
+  }
+
+  set value (val) {
+    this._value = val
   }
 }
+module.exports.Instruction = Instruction
+
+/**
+ * Linear intermediate representation of a label.
+ */
+class Label {
+  /**
+   * Creates a new linear intermediate label representation.
+   * @param {object} opts
+   * @param {string} opts.name The name for the label.
+   * @param {boolean} opts.local `true` if the label is local, `false`
+   *   otherwise.
+   */
+  constructor ({
+    name,
+    local
+  }) {
+    this.address = -1
+    this._local = local
+    this._name = name
+  }
+
+  /**
+   * @return {number} The instruction address for the label.
+   */
+  get address () {
+    return this._address
+  }
+
+  /**
+   * Sets the instruction address for the label.
+   * @param {number} addr The address to set.
+   */
+  set address (addr) {
+    this._address = addr
+  }
+
+  /**
+   * @return {boolean} `true` if this is a local label, `false` otherwise.
+   */
+  get local () {
+    return this._local
+  }
+
+  /**
+   * @return {string} The name of the label.
+   */
+  get name () {
+    return this._name
+  }
+}
+module.exports.Label = Label
 
 /**
  * A collection of recursive handlers for converting parse nodes into linear
@@ -82,18 +271,20 @@ class ParseNodeHandler {
   }
 
   static command (node, scope) {
+    const { line } = node
+    const { name } = node.data
     const params = node.children.map(child => assembleParseNode(child, scope))
-    return new Command(node.data.name, params)
+    return new Command({ line, name, params })
   }
 
   static label (node, scope) {
     const { name } = node.data
-    return new Label(name, false)
+    return new Label({ name, local: false })
   }
 
   static localLabel (node, scope) {
     const { name } = node.data
-    return new Label(name, true)
+    return new Label({ name, local: true })
   }
 
   static instruction (node, scope) {
@@ -185,14 +376,13 @@ class ParseNodeHandler {
         break
     }
 
-    return new Instruction({
-      addressingMode,
-      info: InstructionInfo.get(name, addressingMode),
-      localLabel,
-      name,
-      source: node.line.assembly,
-      value,
-    })
+    try {
+      const info = InstructionInfo.get(name, addressingMode)
+      const { line } = node
+      return new Instruction({ info, localLabel, line, value, })
+    } catch (err) {
+      throw new AssemblyError(err.message, node.line)
+    }
   }
 
   static identifier (node, scope) {
@@ -230,7 +420,7 @@ function assembleParseNode (node, scope) {
   }
   const handler = ParseNodeHandler[node.type]
   if (!handler) {
-    throw new Error(`Encountered unknown ParseNode type '${node.type}'.`)
+    throw new AssemblyError(`Unknown parse node type "${node.type}"`, node.line)
   }
   return handler(node, scope)
 }
@@ -241,10 +431,13 @@ function assignAddresses (linearForm) {
   for (const lir of linearForm) {
     if (lir instanceof Command) {
       if (lir.name !== 'org') {
-        throw new Error(`Unknown command .${lir.name}`)
+        throw new AssemblyError(`Unknown command ".${lir.name}"`, lir.line)
       }
       if (lir.params.length !== 1 || !lir.params[0].isNumber()) {
-        throw new Error(`.org expects a single numeric command`)
+        throw new AssemblyError(
+          `.org expects a single numeric command`,
+          lir.line
+        )
       }
       address = lir.params[0].data.value
     } else if (lir instanceof Label) {
@@ -301,7 +494,6 @@ function buildInstruction (instruction) {
   }
 
   if (!value) {
-    console.log(instruction)
     throw new AssemblyError(
       'Internal error: expected instruction to have value',
       instruction.line

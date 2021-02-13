@@ -1,6 +1,6 @@
 const fs = require('fs')
 const { localLabel } = require('./src/assembler/ParseNode')
-const { assemble, toHexString } = require('./src/assembler')
+const { assemble, toHexString, Instruction } = require('./src/assembler')
 const { parse } = require('./src/assembler/parser')
 
 /**
@@ -41,11 +41,10 @@ class Assembler {
     const root = parse(source)
     assemble(root).forEach(lir => {
       const address = toHexString(lir.address)
-      if (!lir.bytes) {
-        console.log(address, (lir.local ? '@' : '') + lir.name + ':')
+      if (lir instanceof Instruction) {
+        console.log(address, lir.hex, '\t', lir.source)
       } else {
-        let byteString = lir.toByteString()
-        console.log(address, byteString, '\t', lir.source)
+        console.log(address, (lir.local ? '@' : '') + lir.name + ':')
       }
     })
   }
