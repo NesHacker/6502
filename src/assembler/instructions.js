@@ -97,18 +97,28 @@ class InstructionInfo {
     if (!modes[addressingMode]) {
       throw new InvalidAddressingModeError(name, addressingMode)
     }
-    return new InstructionInfo(modes[addressingMode])
+    return new InstructionInfo(name, addressingMode, modes[addressingMode])
   }
 
   /**
    * Creates a new `InstructionInfo` object. Do not use this constructor
    * directly, instead use the static `InstructionInfo.get`.
+   * @param {string} name Name of the instruction.
    * @param {object} definition Instruction addressing mode definition for the
    *   information model.
    * @see InstructionInfo.get
    */
-  constructor (definition) {
+  constructor (name, addressingMode, definition) {
+    this._addressingMode = addressingMode
     this._definition = definition
+    this._name = name
+  }
+
+  /**
+   * @return {string} The addressing mode for the instruction.
+   */
+  get addressingMode () {
+    return this._addressingMode
   }
 
   /**
@@ -131,6 +141,13 @@ class InstructionInfo {
    */
   get length () {
     return this._definition.bytes
+  }
+
+  /**
+   * @return {string} The name of the instruction.
+   */
+  get name () {
+    return this._name
   }
 
   /**
