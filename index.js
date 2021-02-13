@@ -28,7 +28,7 @@ class Assembler {
   static toHexString (source) {
     return assemble(parse(source))
       .filter(lir => Array.isArray(lir.bytes))
-      .map(lir => lir.toByteString())
+      .map(lir => lir.hex)
       .join('')
   }
 
