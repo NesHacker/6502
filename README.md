@@ -5,14 +5,14 @@ JavaScript utilities for 6502 programming.
 `npm install @neshacker/6502-tools`
 
 ## Assembler
-The package includes a basic 6502 assembler with support for basic constant
-assignment, the `.org` command, and all core 6502 instructions and addressing
-modes.
+The package includes a basic 6502 assembler with support for basic variable
+assignment, a handful of assembler commands, and all core 6502 instruction
+addressing modes.
 
 The assembler is very early in development and is not fully featured but it does
 work well for some basic tasks, such as converting assembly to hex-strings for
-use with a hex editor, etc. For larger tasks or projects we suggest you use
-[ca65](https://cc65.github.io/doc/ca65.html).
+use with a hex editor, etc. For larger tasks or projects please use a more
+mature assembler such as [ca65](https://cc65.github.io/doc/ca65.html).
 
 ### API Reference
 
@@ -69,6 +69,29 @@ A91620DCAC60
 Same as `Assembler.toHexString` but instead converts the source found in the
 file with the given path.
 
+### Commands
+
+#### `.addr`
+This command set the absolute program address at the point of invocation. It is
+useful for defining patch segements for ROM hacks.
+
+```
+; Set the absolute program offset to $C000
+.org $C000
+  lda #0      ; Address $C000
+  @loop:      ; Address = $C002
+  dex         ; Address = $C002
+  bne @loop   ; Address = $C003, branch to @loop on zero flag
+```
+
+#### `.byte`
+This defines a run of arbitrary bytes to be processed by the assembler. Useful
+for defining lookup tables or text segments.
+
+```
+.byte 16, 32, 64   ; Literal bytes: $10, $20, $40
+.byte "Hello"      ; Literal bytes: $48, $65, 6C, $6C, $6F
+```
 
 ## License
 MIT
