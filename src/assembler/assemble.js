@@ -5,6 +5,8 @@ const { Scope } = require('./Scope')
 const { Command } = require('./Command')
 const { Instruction } = require('./Instruction')
 const { Label } = require('./Label')
+const { ByteArray } = require('./ByteArray')
+const { executeCommand } = require('./commands')
 
 /**
  * A collection of recursive handlers for converting parse nodes into linear
@@ -230,6 +232,20 @@ function assembleParseNode (node, scope) {
   return handler(node, scope)
 }
 
+
+/**
+ * Executes all commands that generate additional intermediate forms.
+ * @param {Array} linearForms An array containing the linear forms to execute.
+ */
+function evaluateCommands (linearForms) {
+  return linearForms.map(lir => {
+    if (!(lir instanceof Command) || lir.name === 'org') {
+      return lir
+    }
+    return executeCommand(lir)
+  }).filter(lir => !!lir)
+}
+
 /**
  * Attempts to assign addresses to the given list of linear intermediate forms
  * models.
@@ -240,19 +256,21 @@ function assignAddresses (linearForms) {
   let address = 0
   for (const lir of linearForms) {
     if (lir instanceof Command) {
-      if (lir.name !== 'org') {
-        throw new AssemblyError(`Unknown command ".${lir.name}"`, lir.line)
-      }
-      if (lir.params.length !== 1 || !lir.params[0].isNumber()) {
+      const { name } = lir
+      if (name === 'org') {
+        address = executeCommand(lir)
+      } else {
         throw new AssemblyError(
-          `.org expects a single numeric command`,
+          `Encountered invalid command "${name}" during address assignment`,
           lir.line
         )
       }
-      address = lir.params[0].data.value
     } else if (lir instanceof Label) {
       lir.address = address
-    } else if (lir instanceof Instruction) {
+    } else if (
+      (lir instanceof Instruction) ||
+      (lir instanceof ByteArray)
+    ) {
       lir.address = address
       address += lir.length
     }
@@ -377,9 +395,12 @@ module.exports.buildInstruction = buildInstruction
 function assemble (rootNode) {
   // Recursively construct the linear representation of the given root node
   const scope = new Scope()
-  const linearForm = assembleParseNode(rootNode, scope)
+  let linearForm = assembleParseNode(rootNode, scope)
 
-  // Execute commands and assign addresses to labels and instructions
+  // Evaluate all commands that generate further intermediate forms (e.g. .byte)
+  linearForm = evaluateCommands(linearForm)
+
+  // Assign addresses to labels and instructions
   assignAddresses(linearForm)
 
   // Build a map of all local and global labels
@@ -397,7 +418,9 @@ function assemble (rootNode) {
 
   // Return the final assembled form
   return linearForm.filter(lir => (
-    (lir instanceof Instruction) || (lir instanceof Label)
+    (lir instanceof ByteArray) ||
+    (lir instanceof Instruction) ||
+    (lir instanceof Label)
   ))
 }
 

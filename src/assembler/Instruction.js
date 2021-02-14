@@ -1,13 +1,23 @@
+const { InstructionInfo } = require("../instructions")
+const { ParseLine } = require("../parser")
+const ParseNode = require("../parser/ParseNode")
+const { bytesToHex } = require("./util")
+
 /**
  * Linear intermediate representation of an instruction.
  */
 class Instruction {
-  constructor ({
-    info,
-    localLabel,
-    value,
-    line
-  }) {
+  /**
+   * Creates a new instruction.
+   * @param {object} opts Options for the instruction.
+   * @param {InstructionInfo} opts.info The 6502 instruction information.
+   * @param {boolean} opts.localLabel Whether or not this instruction references
+   *  a local label.
+   * @param {ParseNode} opts.value The value for the instruction.
+   * @param {ParseLine} opts.line The source line that generated the
+   *  instruction.
+   */
+  constructor ({ info, localLabel, value, line }) {
     this._info = info
     this._line = line
 
@@ -16,7 +26,6 @@ class Instruction {
     this.value = value
 
     this.localLabel = localLabel
-
   }
 
   /**
@@ -60,11 +69,7 @@ class Instruction {
    * @return {string} The hexadecimal string representation of the node's bytes.
    */
   get hex () {
-    return Array.from(this.bytes)
-      .map(b => b.toString(16))
-      .map(s => s.length < 2 ? `0${s}` : s)
-      .join('')
-      .toUpperCase()
+    return bytesToHex(this.bytes)
   }
 
   /**

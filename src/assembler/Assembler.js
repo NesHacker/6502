@@ -2,6 +2,7 @@ const { assemble } = require('./assemble')
 const fs = require('fs')
 const { Instruction } = require('./Instruction')
 const { parse } = require('./../parser')
+const { ByteArray } = require('./ByteArray')
 
 /**
  * Converts a number to a hexadecimal string of bytes.
@@ -37,17 +38,20 @@ class Assembler {
    */
   static toHexString (source) {
     const lir = assemble(parse(source))
-    const instructions = lir.filter(v => v instanceof Instruction)
+    const nonLabels = lir.filter(v => (
+      v instanceof Instruction ||
+      v instanceof ByteArray
+    ))
     const hex = []
-    instructions.forEach(instruction => {
-      if (!instruction.bytes || instruction.bytes.length === 0) {
-        const { lineNumber } = instruction.line
-        const { source } = instruction
+    nonLabels.forEach(nonLabel => {
+      if (!nonLabel.bytes || nonLabel.bytes.length === 0) {
+        const { lineNumber } = nonLabel.line
+        const { source } = nonLabel
         throw new Error(
           `Unable to generate hex for line ${lineNumber} "${source}".`
         )
       }
-      hex.push(instruction.hex)
+      hex.push(nonLabel.hex)
     })
     return hex.join('')
   }

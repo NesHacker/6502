@@ -20,7 +20,7 @@ class ParseError extends Error {
 module.exports.ParseError = ParseError
 
 /**
- * Information about a parsed line.
+ * Information about a line of parsed 6502 assembly.
  */
 class ParseLine {
   /**
