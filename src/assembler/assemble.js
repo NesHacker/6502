@@ -213,6 +213,15 @@ class ParseNodeHandler {
   static number (node, scope) {
     return node
   }
+
+  /**
+   * Handles recursive assembly for stringLiteral nodes.
+   * @param {ParseNode} node The node to assemble.
+   * @param {Scope} scope The current assembly scope.
+   */
+  static stringLiteral (node, scope) {
+    return node
+  }
 }
 
 /**

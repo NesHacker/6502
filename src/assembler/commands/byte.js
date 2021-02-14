@@ -1,3 +1,4 @@
+const { AssemblyError } = require("../AssemblyError")
 const { ByteArray } = require("../ByteArray")
 
 /**
@@ -14,7 +15,7 @@ function byte (command) {
 
   const bytes = []
 
-  params.forEach(param => {
+  params.forEach((param, index) => {
     if (param.isNumber()) {
       let value = param.data.value
       while (value > 0xff) {
@@ -22,6 +23,23 @@ function byte (command) {
         value = value >>> 8
       }
       bytes.push(value)
+    } else if (param.isStringLiteral()) {
+      param.data.value.split('').forEach((char, index) => {
+        const code = char.charCodeAt(0)
+        if (code > 255) {
+          throw new AssemblyError(
+            `.byte - encountered non-bytesized string literal character `
+            + `'${char}' at string index ${index}`,
+            line
+          )
+        }
+        bytes.push(code)
+      })
+    } else {
+      throw new AssemblyError(
+        `.byte - invalid non-numeric/string parameter at index '${index}'`,
+        line
+      )
     }
   })
 

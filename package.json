@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "build": "pegjs ./src/assembler/lineParser.peg"
+    "build": "pegjs ./src/parser/lineParser.peg"
   },
   "repository": {
     "type": "git",

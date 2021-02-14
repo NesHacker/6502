@@ -82,6 +82,7 @@ expression
   = identifier
   / immediate
   / number
+  / stringLiteral
 
 identifier = text:([a-zA-Z_][a-zA-Z0-9_]*) {
   const characters = text.length > 1 ? [text[0]].concat(text[1]) : text
@@ -106,3 +107,19 @@ number
     const valueText = [sign ? sign : '+'].concat(digits).join('')
     return ParseNode.number(16, valueText)
   }
+
+stringLiteral = '"' characters:(escapeSequence / [^"])+ '"' {
+  return ParseNode.stringLiteral(characters.join(''))
+}
+
+escapeSequence
+  = '\\a' { return '\a' }
+  / '\\b' { return '\b' }
+  / '\\e' { return '\e' }
+  / '\\f' { return '\f' }
+  / '\\n' { return '\n' }
+  / '\\r' { return '\r' }
+  / '\\t' { return '\t' }
+  / '\\v' { return '\v' }
+  / '\\\\' { return '\\' }
+  / '\\"' { return "\"" }

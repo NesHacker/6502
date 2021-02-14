@@ -104,6 +104,14 @@ module.exports = class ParseNode {
   }
 
   /**
+   * Creates a parse node representing a string literal.
+   * @param {string} value The value of the string literal.
+   */
+  static stringLiteral (value) {
+    return new ParseNode('stringLiteral', [], { value })
+  }
+
+  /**
    * Creates a new parse node.
    * @param {string} type The node's type.
    * @param {Array<ParseNode>} [children] Array of children for the node.
@@ -221,6 +229,13 @@ module.exports = class ParseNode {
    */
   isNumber () {
     return this.type === 'number'
+  }
+
+  /**
+   * @return `true` if the node represents a string literal, `false` otherwise.
+   */
+  isStringLiteral () {
+    return this.type === 'stringLiteral'
   }
 }
 

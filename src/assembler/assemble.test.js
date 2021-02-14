@@ -46,7 +46,7 @@ test('assemble(): basic assembly and LIR output', () => {
   expect(bne.address).toEqual(address)
 })
 
-test('assemble: .byte command', () => {
+test('assemble(): .byte command', () => {
   const parseNode = parse(`
     .byte %00001111, %11110000
     .byte $ACDC, $AABBCCDD
@@ -59,14 +59,32 @@ test('assemble: .byte command', () => {
   const [a, b, c] = lir
 
   expect(a).toBeInstanceOf(ByteArray)
-  expect(a.length).toEqual(2)
   expect(Array.from(a.bytes)).toEqual([ 0x0F, 0xF0 ])
 
   expect(b).toBeInstanceOf(ByteArray)
-  expect(b.length).toEqual(6)
   expect(Array.from(b.bytes)).toEqual([ 0xDC, 0xAC, 0xDD, 0xCC, 0xBB, 0xAA ])
 
   expect(c).toBeInstanceOf(ByteArray)
-  expect(c.length).toEqual(8)
   expect(Array.from(c.bytes)).toEqual([ 1, 2, 4, 8, 16, 32, 64, 128 ])
+})
+
+test('assemble(): .byte with string literal', () => {
+  const parseNode = parse(`
+    .byte "Hello World"
+    .byte "Alpha\\nBeta\\n\\r"
+  `)
+  const lir = assemble(parseNode)
+  expect(lir.length).toEqual(2)
+
+  const [first, second] = lir
+
+  expect(first).toBeInstanceOf(ByteArray)
+  expect(
+    Array.from(first.bytes).map(v => String.fromCharCode(v)).join('')
+  ).toEqual('Hello World')
+
+  expect(second).toBeInstanceOf(ByteArray)
+  expect(
+    Array.from(second.bytes).map(v => String.fromCharCode(v)).join('')
+  ).toEqual('Alpha\nBeta\n\r')
 })
