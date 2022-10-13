@@ -51,7 +51,7 @@ class InvalidInstructionError extends Error {
    * @param {string} name Name of the invalid instruction.
    */
   constructor (name) {
-    super(`Invlaid instruction: ${name}`)
+    super(`Invalid instruction: ${name}`)
   }
 }
 
